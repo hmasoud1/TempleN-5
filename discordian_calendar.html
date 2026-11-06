@@ -1,0 +1,192 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Discordian Flipboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@1,125,800&family=Barlow+Condensed:wght@500;600&family=Cousine:wght@400;700&display=swap">
+<style>
+  /* Layout: white sheet like the converter; a 1960s terminal flap board in a pale concrete surround, converter image beneath; one centred column. */
+  :root {
+    --bg: #ffffff;           /* sheet white */
+    --ink: #111111;          /* converter type */
+    --surround: #d4d3cf;     /* concrete surround of the board */
+    --board: #1b1b1a;        /* board face */
+    --flap: #262625;         /* flap tile */
+    --flap-lo: #1e1e1d;      /* lower flap, slightly darker */
+    --flap-ink: #ebe8e1;     /* aged white letters */
+    --rule: #3c3c3a;         /* row frames */
+    --label: #bdbab3;        /* small board labels */
+    --muted: #555555;
+    --heading: "Archivo", "Arial Black", Arial, sans-serif;
+    --flapface: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --mono: Menlo, "SF Mono", "Cousine", ui-monospace, "DejaVu Sans Mono", monospace;
+    --cols: 16;
+    color-scheme: light;
+  }
+  html, body { background: var(--bg); color: var(--ink); }
+  body {
+    margin: 0;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+    font-family: var(--mono);
+  }
+  main { max-width: 780px; margin: 0 auto; display: grid; gap: 28px; }
+
+  .surround {
+    position: relative; padding: clamp(14px, 3vw, 28px) clamp(14px, 4vw, 44px);
+    background: var(--surround); border-radius: clamp(28px, 7vw, 72px);
+    box-shadow: inset 0 2px 0 #e6e5e1, inset 0 -3px 6px rgba(0,0,0,.25);
+    filter: grayscale(1) contrast(1.05);
+  }
+  .board {
+    position: relative; display: grid; gap: 7px; overflow: hidden;
+    padding: clamp(12px, 2.4vw, 22px) clamp(10px, 2.6vw, 26px) clamp(16px, 3vw, 26px);
+    background: var(--board); border-radius: clamp(18px, 5vw, 52px);
+    box-shadow: inset 0 4px 14px rgba(0,0,0,.7);
+  }
+  .board::after { /* photographic grain */
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 9; opacity: .22; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; padding: 0 2px 4px; }
+  .head h1 {
+    margin: 0; font: italic 800 clamp(1rem, 3.4vw, 1.7rem)/1.05 var(--heading); font-stretch: 125%;
+    letter-spacing: .02em; color: var(--flap-ink); text-transform: uppercase; text-wrap: balance;
+  }
+  .head .place { font: 600 clamp(.62rem, 1.6vw, .78rem)/1.2 var(--heading); letter-spacing: .14em; color: var(--label); text-transform: uppercase; }
+
+  .row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 2px; padding: 3px; border: 1px solid var(--rule); background: #121211; }
+  .row[hidden] { display: none; }
+
+  /* split-flap cell */
+  .c {
+    --h: clamp(28px, 6.6vw, 50px);
+    position: relative; height: var(--h); perspective: 300px;
+    font: 600 calc(var(--h) * 0.8)/var(--h) var(--flapface); text-align: center; color: var(--flap-ink);
+    background: #0d0d0c;
+  }
+  .c > span { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background: var(--flap); backface-visibility: hidden; }
+  .c > span > b { display: block; height: var(--h); font-weight: 600; }
+  .c .t, .c .ft { top: 0; transform-origin: bottom; background: var(--flap); }
+  .c .b, .c .fb { bottom: 0; transform-origin: top; background: var(--flap-lo); }
+  .c .b > b, .c .fb > b { transform: translateY(-50%); }
+  .c::after { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: #0a0a0a; z-index: 5; }
+  .c .ft { z-index: 3; }
+  .c .fb { z-index: 4; transform: rotateX(90deg); }
+  .c.go .ft { animation: fallTop var(--d, 70ms) ease-in forwards; }
+  .c.go .fb { animation: fallBot var(--d, 70ms) ease-out var(--d, 70ms) forwards; }
+  @keyframes fallTop { to { transform: rotateX(-90deg); } }
+  @keyframes fallBot { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
+
+  .art { margin: 0; }
+  .art img { display: block; width: 100%; height: auto; max-width: 100%; }
+  .note { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { .c.go .ft, .c.go .fb { animation: none; } }
+</style>
+
+<main>
+  <div class="surround">
+    <section class="board" aria-live="polite" aria-label="Today's Discordian date and time in Syracuse, New York">
+      <div class="head"><h1>On this day of Discord</h1><span class="place">Syracuse, New York</span></div>
+      <div class="row" data-row="0"></div>
+      <div class="row" data-row="1"></div>
+      <div class="row" data-row="2"></div>
+      <div class="row" data-row="3" hidden></div>
+      <div class="row" data-row="4"></div>
+    </section>
+  </div>
+
+  <figure class="art"><img src="calendar.jpg" alt="Temple Nº5 Perpetual Date Converter: Discordian seasons, days of the week and holydays, a full-year date table, and King Kong over a city square" width="1714" height="4096"></figure>
+
+  <p class="note">Discordian (Erisian) date and local time in Syracuse, New York. The Discordian calendar has no clock of its own, so the time line is Eastern time.</p>
+</main>
+
+<script>
+(() => {
+  const COLS = 16;
+  const SET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.-'";
+  const WEEKDAYS = ["SWEETMORN", "BOOMTIME", "PUNGENDAY", "PRICKLE-PRICKLE", "SETTING ORANGE"];
+  const SEASONS  = ["CHAOS", "DISCORD", "CONFUSION", "BUREAUCRACY", "THE AFTERMATH"];
+  const APOSTLE  = ["MUNGDAY", "MOJODAY", "SYADAY", "ZARADAY", "MALADAY"];   // day 5 of each season
+  const FLUX     = ["CHAOFLUX", "DISCOFLUX", "CONFUFLUX", "BUREFLUX", "AFFLUX"]; // day 50
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function ddate(d) {
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const yold = "YOLD " + (y + 1166);
+    if (leap && m === 1 && day === 29) return { lines: ["ST. TIB'S DAY", "", yold], holy: "" };
+    let doy = Math.round((Date.UTC(y, m, day) - Date.UTC(y, 0, 1)) / 864e5);
+    if (leap && doy > 59) doy -= 1;
+    const s = Math.floor(doy / 73), n = (doy % 73) + 1;
+    const holy = n === 5 ? APOSTLE[s] : n === 50 ? FLUX[s] : "";
+    return { lines: [WEEKDAYS[doy % 5], SEASONS[s] + " " + n, yold], holy };
+  }
+  const pad = t => { t = t.toUpperCase().slice(0, COLS); const l = Math.floor((COLS - t.length) / 2); return (" ".repeat(l) + t).padEnd(COLS, " "); };
+  const clock = d => String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+
+  // build cells
+  const rows = [...document.querySelectorAll(".row")].map(r => {
+    const cells = [];
+    for (let i = 0; i < COLS; i++) {
+      const c = document.createElement("div"); c.className = "c";
+      c.innerHTML = '<span class="t"><b> </b></span><span class="b"><b> </b></span><span class="ft"><b> </b></span><span class="fb"><b> </b></span>';
+      c._ch = " "; r.appendChild(c); cells.push(c);
+    }
+    return { el: r, cells };
+  });
+
+  function setFace(c, ch) {
+    const [t, b, ft, fb] = c.querySelectorAll("b");
+    t.textContent = b.textContent = ft.textContent = fb.textContent = ch; c._ch = ch;
+  }
+  function flipOnce(c, ch, dur) {
+    return new Promise(res => {
+      const [t, b, ft, fb] = c.querySelectorAll("b");
+      t.textContent = ch; ft.textContent = c._ch; fb.textContent = ch; b.textContent = c._ch;
+      c.style.setProperty("--d", dur + "ms");
+      c.classList.remove("go"); void c.offsetWidth; c.classList.add("go");
+      setTimeout(() => { b.textContent = ch; ft.textContent = ch; c.classList.remove("go"); c._ch = ch; res(); }, dur * 2 + 10);
+    });
+  }
+  async function spin(c, target, delay, steps) {
+    if (reduce) { setFace(c, target); return; }
+    await new Promise(r => setTimeout(r, delay));
+    const ti = SET.indexOf(target) < 0 ? 0 : SET.indexOf(target);
+    let i = (ti - steps + SET.length * 4) % SET.length;           // walk the drum forward to the target
+    for (let k = 0; k < steps; k++) { await flipOnce(c, SET[i], 38); i = (i + 1) % SET.length; }
+    await flipOnce(c, target, 60);
+  }
+  function show(rowIdx, text, opts = {}) {
+    const row = rows[rowIdx], t = pad(text);
+    return Promise.all(row.cells.map((c, i) => {
+      if (opts.onlyChanged && c._ch === t[i]) return;
+      const steps = opts.short ? 3 + Math.floor(Math.random() * 3) : (t[i] === " " && c._ch === " " ? 0 : 8 + Math.floor(Math.random() * 14));
+      return spin(c, t[i], (opts.delay || 0) + i * 35 + Math.random() * 60, steps);
+    }));
+  }
+
+  function syracuseNow() {
+    try {
+      const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+        .formatToParts(new Date()).map(x => [x.type, x.value]));
+      return new Date(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute);
+    } catch (e) { return new Date(); }
+  }
+  let lastDay = "", lastMin = "";
+  function render(first) {
+    const now = syracuseNow(), key = now.toDateString(), mm = clock(now);
+    if (key !== lastDay) {
+      lastDay = key; const dd = ddate(now);
+      dd.lines.forEach((l, r) => show(r, l, { delay: first ? r * 220 : 0, onlyChanged: !first }));
+      rows[3].el.hidden = !dd.holy; if (dd.holy) show(3, dd.holy, { delay: first ? 660 : 0 });
+    }
+    if (mm !== lastMin) {
+      lastMin = mm; show(4, mm, { delay: first ? 880 : 0, onlyChanged: !first, short: !first });
+    }
+  }
+  render(true);
+  setInterval(() => render(false), 1000);
+})();
+</script>
+
+</body></html>
